@@ -192,7 +192,7 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
 		</ul>
 		<h4>Operation:</h4>
 		<ul>
-			<li>The Simple Countdown is triggered by an FPP Command</li>
+			<li>The Simple Countdown is triggered by an FPP Command (Run Simple Countdown)</li>
 			<li>The Countdown will display one time per FPP Command</li>
 			<li>If you want a repeating Countdown, you can create a repeating schedule</li>
 			<li>Just make sure that you put a pause in your playlist</li>
