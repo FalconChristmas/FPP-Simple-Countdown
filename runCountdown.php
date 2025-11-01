@@ -29,7 +29,7 @@ if (isset($pluginSettings['ENABLED'])){
 if (isset($pluginSettings['EVENT_NAME'])){
     $eventName = $pluginSettings['EVENT_NAME'];
 }else{
-	$eventName ="The Event!";
+	$eventName ="The Event";
 	logEntry("Event Name not specifically defined, using default The Event!");
 }
 
@@ -99,7 +99,7 @@ if (isset($pluginSettings['COUNTUP_POST_TEXT'])){
 if (isset($pluginSettings['COMPLETED_MESSAGE'])){
     $completedText = $pluginSettings['COMPLETED_MESSAGE'];
 }else{
-	$completedText  = "since";
+	$completedText  "It is ".$eventName;
 	logEntry("Completed Text not specifically defined, using default");
 }
 
@@ -287,7 +287,7 @@ if ($d >= 1){
 	
 } 
 if ($elapsed && $countup!="ON"){
-		$messageText= "Countdown complete! Your target is in the past.";
+		$messageText= $completedText;
 	}else{
 		$messageText .= " ".$messagePostText. " ".$eventName;
 	}
