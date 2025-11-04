@@ -99,7 +99,7 @@ if (isset($pluginSettings['COUNTUP_POST_TEXT'])){
 if (isset($pluginSettings['COMPLETED_MESSAGE'])){
     $completedText = $pluginSettings['COMPLETED_MESSAGE'];
 }else{
-	$completedText  "It is ".$eventName;
+	$completedText = "It is ".$eventName;
 	logEntry("Completed Text not specifically defined, using default");
 }
 
