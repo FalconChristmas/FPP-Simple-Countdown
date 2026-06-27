@@ -52,6 +52,10 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
   padding: 20px;
   text-align: center;
 }
+/* FPP10 dark mode only — base/light (and FPP9) rendering left unchanged. */
+[data-bs-theme="dark"] .subheader { background-color: var(--bs-secondary-bg); }
+[data-bs-theme="dark"] #currentColor { border-color: var(--bs-border-color); }
+[data-bs-theme="dark"] #scroll-container { border-color: var(--bs-border-color); }
 
 .col-1 {width: 8.33%;}
 .col-2 {width: 16.66%;}
