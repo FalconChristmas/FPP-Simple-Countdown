@@ -100,6 +100,7 @@ function getScrollSpeed(){
 function getDuration(){
 	$MAX_DURATION = 300;
 
+	$maxDuration = array("Forever" => 0);
         for($i=1;$i<=$MAX_DURATION;$i++) {
 			$maxDuration[$i]= $i;
         }

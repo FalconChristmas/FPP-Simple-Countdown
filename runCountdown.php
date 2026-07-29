@@ -124,6 +124,13 @@ if (isset($pluginSettings['INCLUDE_MINUTES'])){
 	logEntry("Include minutes not specifically defined, using default");
 }
 
+if (isset($pluginSettings['INCLUDE_SECONDS'])){
+    $includeSeconds = $pluginSettings['INCLUDE_SECONDS'];
+}else{
+	$includeSeconds = "";
+	logEntry("Include seconds not specifically defined, using default");
+}
+
 if (isset($pluginSettings['HOST_LOCATION']))
     $hostLocation = $pluginSettings['HOST_LOCATION'];
 
@@ -209,96 +216,124 @@ $strEventDate = $year."-".$month."-".$day." ".$hour.":".$minute.":00";
 
 logEntry( "event date: ".$strEventDate);
 
-
 $date1 = strtotime($strEventDate);
 
-$date2 = time();
-$subTime = $date1 - $date2;
-$elapsed=false;
-
-if ($subTime<0){
-	$elapsed=true;
+$loopCount = 0;
+$centeredLoop = ($scrollSpeed == "0");
+$maxLoops = 1;
+if ($centeredLoop) {
+	$maxLoops = ($duration > 0) ? intval($duration) : PHP_INT_MAX;
 }
 
-$y = abs($subTime/(60*60*24*365));
-$d = abs(($subTime/(60*60*24))%365);
-$h = abs(($subTime/(60*60))%24);
-$m = abs(($subTime/60)%60 +1);
-if ($elapsed){
-	$messagePreText = $countUpPreText;
-	$messagePostText = $countUpPostText;
-	$m +=1;	
-}else{
-	$messagePreText = $preText;
-	$messagePostText = $postText;	
-}
+do {
+	$date2 = time();
+	$subTime = $date1 - $date2;
+	$elapsed=false;
 
-logEntry( "Difference between ".date('Y-m-d H:i:s',$date1)." and ".date('Y-m-d H:i:s',$date2)." is:".$y." years ".$d." days ".$h." hours ".$m." minutes");
+	if ($subTime<0){
+		$elapsed=true;
+	}
 
-$messageText = $messagePreText;
-if ($y >= 1){
-	if ($y >=2){
-		$messageText .= intval($y). " years ";
-	} else {
-		$messageText .= intval($y). " year ";
-	}
-} else {
-	$messageText .= " ";
-}
-
-if ($d >= 1){
-	if ($d >=2){
-		$messageText .= intval($d). " days ";
-	} else {
-		$messageText .= intval($d). " day ";
-	}
-	if($includeHours == "ON"){
-		if ($h >=2) {
-			$messageText .= intval($h). " hours ";
-		} else {
-			if ($h >= 1) {
-				$messageText .= intval($h). " hour ";
-			}
-		}
-	}
-	if($includeMinutes == "ON"){
-		if($includeHours == "OFF"){
-			$m += $h *60;
-		}
-		if ($m >=2) {
-			$messageText .= intval($m). " minutes ";
-		} else {
-			$messageText .= intval($m). " minute ";
-		}		
-	}
-}else {
-	if ($h >=2) {
-			$messageText .= intval($h). " hours ";
-		} else {
-			if ($h >= 1) {
-				$messageText .= intval($h). " hour ";
-			}
-		}
-	if ($m >=2) {
-			$messageText .= intval($m). " minutes ";
-		} else {
-			$messageText .= intval($m). " minute ";
-		}	
-	
-} 
-if ($elapsed && $countup!="ON"){
-		$messageText= $completedText;
+	$y = abs($subTime/(60*60*24*365));
+	$d = abs(($subTime/(60*60*24))%365);
+	$h = abs(($subTime/(60*60))%24);
+	$m = abs(($subTime/60)%60 +1);
+	$s = abs($subTime%60);
+	if ($elapsed){
+		$messagePreText = $countUpPreText;
+		$messagePostText = $countUpPostText;
+		$m +=1;	
 	}else{
-		$messageText .= " ".$messagePostText. " ".$eventName;
+		$messagePreText = $preText;
+		$messagePostText = $postText;	
 	}
 
-$messageText = preg_replace('!\s+!', ' ', $messageText);
+	logEntry( "Difference between ".date('Y-m-d H:i:s',$date1)." and ".date('Y-m-d H:i:s',$date2)." is:".$y." years ".$d." days ".$h." hours ".$m." minutes");
 
-logEntry("messageText= ".$messageText);
-//error_log("RunEventDate.php- messageText= ".$messageText);
-logEntry("ScrollText options-hostLocation=  ".$hostLocation. " overlayModel= ".$overlayModel. " Position= " .$Position. " Font = " .$font. " fontsize= " .$fontSize. " fontColor= " .$color. " scrollSpeed= " .$scrollSpeed. " Auto= " .$auto." duration= " .$duration);
+	$messageText = $messagePreText;
+	if ($y >= 1){
+		if ($y >=2){
+			$messageText .= intval($y). " years ";
+		} else {
+			$messageText .= intval($y). " year ";
+		}
+	} else {
+		$messageText .= " ";
+	}
 
-ScrollText($hostLocation, $overlayModel, $messageText, $Position, $font, $fontSize, $color, $scrollSpeed, $fontAntialias, $duration, $auto);
+	if ($d >= 1){
+		if ($d >=2){
+			$messageText .= intval($d). " days ";
+		} else {
+			$messageText .= intval($d). " day ";
+		}
+		if($includeHours == "ON"){
+			if ($h >=2) {
+				$messageText .= intval($h). " hours ";
+			} else {
+				if ($h >= 1) {
+					$messageText .= intval($h). " hour ";
+				}
+			}
+		}
+		if($includeMinutes == "ON"){
+			if($includeHours == "OFF"){
+				$m += $h *60;
+			}
+			if ($m >=2) {
+				$messageText .= intval($m). " minutes ";
+			} else {
+				$messageText .= intval($m). " minute ";
+			}		
+		}
+		if($includeSeconds == "ON"){
+			if ($s >=2) {
+				$messageText .= intval($s). " seconds ";
+			} else {
+				$messageText .= intval($s). " second ";
+			}
+		}
+	}else {
+		if ($h >=2) {
+				$messageText .= intval($h). " hours ";
+			} else {
+				if ($h >= 1) {
+					$messageText .= intval($h). " hour ";
+				}
+			}
+		if ($m >=2) {
+				$messageText .= intval($m). " minutes ";
+			} else {
+				$messageText .= intval($m). " minute ";
+			}	
+		if($includeSeconds == "ON"){
+			if ($s >=2) {
+				$messageText .= intval($s). " seconds ";
+			} else {
+				$messageText .= intval($s). " second ";
+			}
+		}
+	} 
+	if ($elapsed && $countup!="ON"){
+			$messageText= $completedText;
+		}else{
+			$messageText .= " ".$messagePostText. " ".$eventName;
+		}
+
+	$messageText = preg_replace('!\s+!', ' ', $messageText);
+
+	logEntry("messageText= ".$messageText);
+	logEntry("ScrollText options-hostLocation=  ".$hostLocation. " overlayModel= ".$overlayModel. " Position= " .$Position. " Font = " .$font. " fontsize= " .$fontSize. " fontColor= " .$color. " scrollSpeed= " .$scrollSpeed. " Auto= " .$auto." duration= " .$duration);
+
+	ScrollText($hostLocation, $overlayModel, $messageText, $Position, $font, $fontSize, $color, $scrollSpeed, $fontAntialias, $duration, $auto);
+
+	$loopCount++;
+	if ($loopCount < $maxLoops && !($elapsed && $countup != "ON")) {
+		sleep(1);
+	} elseif ($loopCount < $maxLoops) {
+		$maxLoops = $loopCount;
+	}
+} while ($loopCount < $maxLoops);
 
 	exit(0); //is this needed?
 	

@@ -173,6 +173,16 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
   }
 }
 
+#scroll-text.center {
+  animation: none;
+  -moz-animation: none;
+  -webkit-animation: none;
+  transform: none;
+  -moz-transform: none;
+  -webkit-transform: none;
+  text-align: center;
+}
+
 </style>
 </head>
 
@@ -234,8 +244,9 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
 		<p><h3>If the remaining time is more than a day then you can select to include the hours and/or minutes.</br>
 		</h3></p>
 		<p>Include Hours: <?PrintSettingCheckbox("INCLUDE_HOURS", "INCLUDE_HOURS", 0, 0, "ON", "OFF", $pluginName ,$callbackName = "updateOutputTextHours", $changedFunction = ""); ?> </p>
-		<p>Include Minutes: <?PrintSettingCheckbox("INCLUDE_MINUTES", "INCLUDE_MINUTES", 0, 0, "ON", "OFF", $pluginName ,$callbackName = "updateOutputTextHours", $changedFunction = ""); ?> </p>
-		<p>Your message will appear as:</p>
+<p>Include Minutes: <?PrintSettingCheckbox("INCLUDE_MINUTES", "INCLUDE_MINUTES", 0, 0, "ON", "OFF", $pluginName ,$callbackName = "updateOutputTextHours", $changedFunction = ""); ?> </p>
+<div id="showSeconds" style= "<? echo $showScrollDiv; ?>"><p>Include Seconds: <?PrintSettingCheckbox("INCLUDE_SECONDS", "INCLUDE_SECONDS", 0, 0, "ON", "OFF", $pluginName ,$callbackName = "updateOutputTextSeconds", $changedFunction = ""); ?> </p></div>
+<p>Your message will appear as:</p>
 		<div id="scroll-container" >
 			<div id="scroll-text">Countdown </div>
 		</div>
@@ -267,8 +278,8 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
 				</td></tr>
 			</table>
 		</div>
-		<p><b>If you set the scroll speed to 0, then the message will display on the center of the matrix <br/>
-		for the number of seconds set in the Duration</b></p> 
+<p><b>If you set the scroll speed to 0, then the message will display on the center of the matrix <br/>
+for the number of seconds set in the Duration (or Forever)</b></p> 
 		Scroll Speed: <? PrintSettingSelect("SCROLL_SPEED", "SCROLL_SPEED", 0, 0, $defaultValue="20", getScrollSpeed(), $pluginName, $callbackName = "ShowDuration", $changedFunction = ""); ?> </p>
 		<div id="showDuration" style= "<? echo $showScrollDiv; ?>">
 			Duration: <? PrintSettingSelect("DURATION", "DURATION", 0, 0, $defaultValue="10", getDuration(), $pluginName, $callbackName = "", $changedFunction = ""); ?> </p>
@@ -297,6 +308,12 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
 <script>
 updateOutputText();
 ShowColorPicker();
+ShowDuration();
+setInterval(updateOutputText, 1000);
+document.getElementById('SCROLL_SPEED').addEventListener('change', function() {
+	ShowDuration();
+	updateOutputText();
+});
 
 function ShowColorPicker() {
 	if ($('#ShowColorPicker').is(':checked')) {
@@ -340,9 +357,22 @@ function updateOutputTextHours(updateOutput){
 	updateOutputText();	
 }
 
+function updateOutputTextSeconds(updateOutput){
+	updateOutputText();	
+}
+
 function updateOutputText(){
 	var messageText= getMessageText();
-	document.getElementById("scroll-text").innerHTML = messageText;
+	var textEl = document.getElementById("scroll-text");
+	textEl.innerHTML = messageText;
+	var speed = parseInt(document.getElementById('SCROLL_SPEED').value);
+	if (speed > 0) {
+		var textWidth = textEl.scrollWidth;
+		var duration = (1.5 * textWidth) / speed;
+		textEl.style.animationDuration = duration + 's';
+		textEl.style.webkitAnimationDuration = duration + 's';
+		textEl.style.mozAnimationDuration = duration + 's';
+	}
 }
 
 function updateFont(){
@@ -366,6 +396,7 @@ function getMessageText(){
 	var completedText = document.getElementById("COMPLETED_MESSAGE").value;
 	var incHours = document.getElementById("INCLUDE_HOURS").checked;
 	var incMin = document.getElementById("INCLUDE_MINUTES").checked;
+	var incSec = document.getElementById("INCLUDE_SECONDS").checked && document.getElementById('showSeconds').style.display != "none";
 	var countup = document.getElementById("COUNT_UP").checked;
 	var eventDate = new Date(eventYear, eventMonth, eventDay, eventHour, eventMin);
 	var currentDate= new Date();
@@ -374,6 +405,7 @@ function getMessageText(){
 	var daysToDate = (rawTimeDiff/(60*60*24))%365;
 	var hoursToDate = (rawTimeDiff/(60*60))%24;
 	var minutesToDate = (rawTimeDiff/60)%60 +1;
+	var secondsToDate = rawTimeDiff%60;
 	var messageText;
 	var messagePreText;
 	var messagePostText;
@@ -389,6 +421,7 @@ function getMessageText(){
 	daysToDate= Math.floor(Math.abs(daysToDate));
 	hoursToDate =Math.floor(Math.abs(hoursToDate));
 	minutesToDate= Math.floor(Math.abs(minutesToDate));
+	secondsToDate= Math.floor(Math.abs(secondsToDate));
 	
 	if (elapsed && countup){
 		messagePreText= CountUpPreText;
@@ -437,6 +470,14 @@ function getMessageText(){
 			} else {
 				messageText += minutesToDate + " minute ";
 			}	
+		}
+		
+		if(incSec == true){
+			if (secondsToDate >=2) {
+				messageText += secondsToDate + " seconds ";
+			} else {
+				messageText += secondsToDate + " second ";
+			}
 		}	
 	}else {
 			
@@ -453,8 +494,16 @@ function getMessageText(){
 		} else {
 			messageText += minutesToDate + " minute ";
 		}	
+
+		if(incSec == true){
+			if (secondsToDate >=2) {
+				messageText += secondsToDate + " seconds ";
+			} else {
+				messageText += secondsToDate + " second ";
+			}
+		}
 	}           
-        
+    
 	messageText += messagePostText + " " + eventName;
 	return messageText;
 }
@@ -463,8 +512,14 @@ function ShowDuration(){
 	var scrollSpeed = document.getElementById('SCROLL_SPEED').value;
 	if (scrollSpeed ==0){
 		document.getElementById('showDuration').style.display = "block";
+		document.getElementById('showSeconds').style.display = "block";
+		document.getElementById('scroll-text').classList.add('center');
 	}else{
 		document.getElementById('showDuration').style.display = "none";
+		document.getElementById('showSeconds').style.display = "none";
+		document.getElementById('INCLUDE_SECONDS').checked = false;
+		document.getElementById('scroll-text').classList.remove('center');
+		updateOutputText();
 	}
 }
 
