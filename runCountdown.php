@@ -239,6 +239,7 @@ do {
 	$h = abs(($subTime/(60*60))%24);
 	$m = abs(($subTime/60)%60 +1);
 	$s = abs($subTime%60);
+	$showSeconds = ($includeSeconds == "ON") && (abs($subTime) < 3600);
 	if ($elapsed){
 		$messagePreText = $countUpPreText;
 		$messagePostText = $countUpPostText;
@@ -286,7 +287,7 @@ do {
 				$messageText .= intval($m). " minute ";
 			}		
 		}
-		if($includeSeconds == "ON"){
+		if($showSeconds){
 			if ($s >=2) {
 				$messageText .= intval($s). " seconds ";
 			} else {
@@ -306,7 +307,7 @@ do {
 			} else {
 				$messageText .= intval($m). " minute ";
 			}	
-		if($includeSeconds == "ON"){
+		if($showSeconds){
 			if ($s >=2) {
 				$messageText .= intval($s). " seconds ";
 			} else {

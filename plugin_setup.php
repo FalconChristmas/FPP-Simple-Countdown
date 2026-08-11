@@ -81,6 +81,13 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
   display: table;
 }
 
+.subheader ~ .row select {
+  display: inline-block;
+  width: auto;
+  float: none;
+  vertical-align: middle;
+}
+
 @media screen and (max-width: 1000px) {
   div.graphic {
     display: none;
@@ -128,7 +135,8 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
     border: 2px solid #000000;
 }
 #scroll-container {
-	width: 1000px;
+	width: 100%;
+	max-width: 1000px;
   	border: 3px solid black;
   	border-radius: 5px;
   	overflow: hidden;
@@ -245,14 +253,14 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
 		</h3></p>
 		<p>Include Hours: <?PrintSettingCheckbox("INCLUDE_HOURS", "INCLUDE_HOURS", 0, 0, "ON", "OFF", $pluginName ,$callbackName = "updateOutputTextHours", $changedFunction = ""); ?> </p>
 <p>Include Minutes: <?PrintSettingCheckbox("INCLUDE_MINUTES", "INCLUDE_MINUTES", 0, 0, "ON", "OFF", $pluginName ,$callbackName = "updateOutputTextHours", $changedFunction = ""); ?> </p>
-<div id="showSeconds" style= "<? echo $showScrollDiv; ?>"><p>Include Seconds: <?PrintSettingCheckbox("INCLUDE_SECONDS", "INCLUDE_SECONDS", 0, 0, "ON", "OFF", $pluginName ,$callbackName = "updateOutputTextSeconds", $changedFunction = ""); ?> </p></div>
+<div id="showSeconds" style= "<? echo $showScrollDiv; ?>"><p>Include Seconds: <?PrintSettingCheckbox("INCLUDE_SECONDS", "INCLUDE_SECONDS", 0, 0, "ON", "OFF", $pluginName ,$callbackName = "updateOutputTextSeconds", $changedFunction = ""); ?> <span id="INCLUDE_SECONDS_tip" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="auto" data-bs-title="Seconds are only displayed when there is less than an hour remaining. In count up mode, seconds are only displayed until an hour has elapsed."><img id="INCLUDE_SECONDS_img" src="images/redesign/help-icon.svg" class="icon-help" alt="INCLUDE_SECONDS help icon"></span></p></div>
 <p>Your message will appear as:</p>
 		<div id="scroll-container" >
 			<div id="scroll-text">Countdown </div>
 		</div>
 		
 		<br /><div>Font: <? PrintSettingSelect("fontSelect", "FONT", 0, 0, $defaultValue="", getFontsInstalled(), $pluginName, $callbackName = "updateFont", $changedFunction = ""); ?>
-		Font Size: <? PrintSettingSelect("FONT_SIZE", "FONT_SIZE", 0, 0, $defaultValue="20", getFontSizes(), $pluginName, $callbackName = "", $changedFunction = ""); ?>
+		Font Size: <? PrintSettingSelect("FONT_SIZE", "FONT_SIZE", 0, 0, $defaultValue="20", getFontSizes(), $pluginName, $callbackName = "updateOutputText", $changedFunction = ""); ?>
 		Anti-Aliased: <?PrintSettingCheckbox("FONT_ANTIALIAS", "FONT_ANTIALIAS", 0, 0, "1", "", $pluginName , ""); ?></div> 
 		
 		<div id= "divCanvas" class='ui-tabs-panel matrix-tool-bottom-panel'>
@@ -280,20 +288,20 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
 		</div>
 <p><b>If you set the scroll speed to 0, then the message will display on the center of the matrix <br/>
 for the number of seconds set in the Duration (or Forever)</b></p> 
-		Scroll Speed: <? PrintSettingSelect("SCROLL_SPEED", "SCROLL_SPEED", 0, 0, $defaultValue="20", getScrollSpeed(), $pluginName, $callbackName = "ShowDuration", $changedFunction = ""); ?> </p>
+		<p>Scroll Speed: <? PrintSettingSelect("SCROLL_SPEED", "SCROLL_SPEED", 0, 0, $defaultValue="20", getScrollSpeed(), $pluginName, $callbackName = "ShowDuration", $changedFunction = ""); ?></p>
 		<div id="showDuration" style= "<? echo $showScrollDiv; ?>">
-			Duration: <? PrintSettingSelect("DURATION", "DURATION", 0, 0, $defaultValue="10", getDuration(), $pluginName, $callbackName = "", $changedFunction = ""); ?> </p>
+			<p>Duration: <? PrintSettingSelect("DURATION", "DURATION", 0, 0, $defaultValue="10", getDuration(), $pluginName, $callbackName = "", $changedFunction = ""); ?></p>
 		</div>
 		
 		<p>Matrix Name: <? PrintSettingSelect("OVERLAY_MODEL", "OVERLAY_MODEL", 0, 0, $defaultValue="", $values = GetOverlayList(), $pluginName, $callbackName = "", $changedFunction = ""); ?>
-		If this is blank, then you need to configure the correct Pixel Overlay Model</p>
+		<span id="OVERLAY_MODEL_tip" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="auto" data-bs-title="If this is blank, then you need to configure the correct Pixel Overlay Model"><img id="OVERLAY_MODEL_img" src="images/redesign/help-icon.svg" class="icon-help" alt="OVERLAY_MODEL help icon"></span></p>
 		<p>Overlay Mode: <? PrintSettingSelect("OVERLAY_MODE", "OVERLAY_MODE", 0, 0, "", Array("Full Overlay" => "1", "Transparent" => "2", "Transparent RGB" => "3"), $pluginName, $callbackName = "", $changedFunction = ""); ?> </p>
 		<p><h3>The Overlay mode determines how you want your message to display.</h3>
 		<ul>
-			<li>Full Overlay- This will blank out the model and only display your message</li>
-			<li>Transparent- This will display your message over the top of whatever is displaying on your matrix <br/>
+			<li>Full Overlay - This will blank out the model and only display your message</li>
+			<li>Transparent - This will display your message over the top of whatever is displaying on your matrix <br/>
 			but the colors will blend slightly with what is currently being displayed</li>
-			<li>Transparent RGB- This will display your message over the top of whatever is displaying on your matrix <br/>
+			<li>Transparent RGB - This will display your message over the top of whatever is displaying on your matrix <br/>
 			the colors will override what is currently being displayed</li> 
 		</ul>
 		
@@ -306,7 +314,6 @@ for the number of seconds set in the Duration (or Forever)</b></p>
 </div>
 
 <script>
-updateOutputText();
 ShowColorPicker();
 ShowDuration();
 setInterval(updateOutputText, 1000);
@@ -327,11 +334,24 @@ function setColor(color, updateColpicker = true) {
 	if (color.substring(0,1) != '#')
 		color = '#' + color;
     pluginSettings['COLOR'] = color;
-    SetPluginSetting('<?php echo $pluginName; ?>', 'COLOR', color, 0, 0);
+    $.ajax({
+		url: 'api/plugin/<?php echo $pluginName; ?>/settings/COLOR',
+		data: '' + color,
+		method: 'PUT',
+		timeout: 1000,
+		async: false,
+		success: function () {
+			$.jGrowl('COLOR Changed.', { themeState: 'success' });
+		},
+		fail: function () {
+			DialogError('Save Setting', 'Failed to save COLOR setting.');
+		}
+	});
     $('#currentColor').css('background-color', color);
 	currentColor = color;
     if (updateColpicker)
 		$('#colpicker').colpickSetColor(color);
+	updateOutputText();
 		
 }
     var colpickTimer = null;
@@ -352,6 +372,8 @@ function setColor(color, updateColpicker = true) {
         currentColor = pluginSettings['COLOR'];
         $('#currentColor').css('background-color', currentColor);
     }
+
+updateOutputText();
 	
 function updateOutputTextHours(updateOutput){
 	updateOutputText();	
@@ -365,6 +387,11 @@ function updateOutputText(){
 	var messageText= getMessageText();
 	var textEl = document.getElementById("scroll-text");
 	textEl.innerHTML = messageText;
+	var fontSize = parseInt(document.getElementById("FONT_SIZE").value);
+	if (fontSize > 0)
+		textEl.style.fontSize = fontSize + 'px';
+	if (typeof(currentColor) != 'undefined' && currentColor != '')
+		textEl.style.color = currentColor;
 	var speed = parseInt(document.getElementById('SCROLL_SPEED').value);
 	if (speed > 0) {
 		var textWidth = textEl.scrollWidth;
@@ -376,8 +403,6 @@ function updateOutputText(){
 }
 
 function updateFont(){
-	var fontStyle= document.getElementById("FONT").value;
-	document.getElementById('scroll-text').style.fontFamily = fontStyle;	
 	updateOutputText();
 }
 
@@ -400,7 +425,8 @@ function getMessageText(){
 	var countup = document.getElementById("COUNT_UP").checked;
 	var eventDate = new Date(eventYear, eventMonth, eventDay, eventHour, eventMin);
 	var currentDate= new Date();
-	var rawTimeDiff = (eventDate - currentDate)/1000; 
+	var rawTimeDiff = (eventDate - currentDate)/1000;
+	var showSeconds = incSec == true && Math.abs(rawTimeDiff) < 3600; 
 	var yearsToDate = rawTimeDiff/(60*60*24*365);
 	var daysToDate = (rawTimeDiff/(60*60*24))%365;
 	var hoursToDate = (rawTimeDiff/(60*60))%24;
@@ -472,7 +498,7 @@ function getMessageText(){
 			}	
 		}
 		
-		if(incSec == true){
+		if(showSeconds == true){
 			if (secondsToDate >=2) {
 				messageText += secondsToDate + " seconds ";
 			} else {
@@ -495,7 +521,7 @@ function getMessageText(){
 			messageText += minutesToDate + " minute ";
 		}	
 
-		if(incSec == true){
+		if(showSeconds == true){
 			if (secondsToDate >=2) {
 				messageText += secondsToDate + " seconds ";
 			} else {
