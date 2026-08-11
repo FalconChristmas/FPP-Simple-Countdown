@@ -49,6 +49,7 @@ function getMinutes(){
 	return $minuteList;
 }
 function GetOverlayList() { 
+	$OverlayModels = array();
 	$modelsList = GetModels("");
 	for($i=0;$i<=count($modelsList)-1;$i++) {
         $OverlayModels[trim($modelsList[$i]["Name"])]=trim($modelsList[$i]["Name"]);
@@ -62,9 +63,15 @@ function GetModels($host) {
     $ch = curl_init("http://" . $host . "/api/overlays/models");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     $data = curl_exec($ch);
     curl_close($ch);
-    return json_decode($data, true);
+    $modelsList = json_decode($data, true);
+    if (!is_array($modelsList)) {
+        return array();
+    }
+    return $modelsList;
 }
 
 function getFontsInstalled() {
@@ -72,9 +79,14 @@ function getFontsInstalled() {
     $ch = curl_init("http://" . $host . "/api/overlays/fonts");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     $data = curl_exec($ch);
     curl_close($ch);
-    $fontsList= json_decode($data, true);
+    $fontsList = json_decode($data, true);
+    if (!is_array($fontsList)) {
+        return array();
+    }
 	for($i=1;$i<=count($fontsList)-1;$i++) {
 		$installedFonts[$fontsList[$i]]=$fontsList[$i];
 	}
@@ -132,6 +144,8 @@ function ScrollText($host="127.0.0.1", $model, $msg, $Position, $Font, $FontSize
     }
     $ch = curl_init("http://" . $host . "/api/command");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json','Content-Length: ' . strlen($data)));
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
@@ -143,11 +157,13 @@ function ScrollText($host="127.0.0.1", $model, $msg, $Position, $Font, $FontSize
 
 
 function logEntry($data,$logLevel=1) {
-	global $logFile,$myPid, $LOG_LEVEL;
+	global $myPid, $LOG_LEVEL, $settings;
 	
-	if($logLevel <= $LOG_LEVEL) 
-		return
-		
+	if($logLevel <= $LOG_LEVEL) {
+		return;
+	}
+	
+	$logFile = $settings['logDirectory']."/plugin-".basename(dirname(__FILE__)).".log";
 	$data = $_SERVER['PHP_SELF']." : [".$myPid."] ".$data;		
 	$logWrite= fopen($logFile, "a") or die("Unable to open file!");
 	fwrite($logWrite, date('Y-m-d h:i:s A',time()).": ".$data."\n");
