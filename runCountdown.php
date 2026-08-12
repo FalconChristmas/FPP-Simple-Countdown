@@ -193,9 +193,27 @@ if (isset($pluginSettings['SCROLL_SPEED'])){
     logEntry("Scroll Speed not specifically defined, using default of 20 instead");
 }
 
+if (isset($pluginSettings['SCROLL_DIRECTION'])){
+    $scrollDirection = urldecode($pluginSettings['SCROLL_DIRECTION']);
+}else{
+    $scrollDirection = "horizontal";
+    logEntry("Scroll Direction not specifically defined, using default of horizontal instead");
+}
+
+if (isset($pluginSettings['SCROLL_INVERT'])){
+    $scrollInvert = urldecode($pluginSettings['SCROLL_INVERT']);
+}else{
+    $scrollInvert = "";
+    logEntry("Scroll Invert not specifically defined, using default of off instead");
+}
+
 $Position="R2L";
 if ($scrollSpeed=="0"){
 	$Position="Center";
+}else if ($scrollDirection == "vertical"){
+	$Position = ($scrollInvert == "ON") ? "T2B" : "B2T";
+}else{
+	$Position = ($scrollInvert == "ON") ? "L2R" : "R2L";
 }
 
 if (isset($pluginSettings['DURATION'])){

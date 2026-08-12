@@ -11,12 +11,14 @@ $pluginName = basename(dirname(__FILE__));
 $logFile = $settings['logDirectory']."/".$pluginName.".log";
 
 $showScrollDiv="display:none";
+$showScrollOptionsDiv="display:none";
 if (isset($pluginSettings['SCROLL_SPEED'])){
 	$scrollSpeed= $pluginSettings['SCROLL_SPEED'];
 	if ($scrollSpeed==0){
 		$showScrollDiv	="display:block";
 	}else{
 		$showScrollDiv ="display:none";
+		$showScrollOptionsDiv ="display:block";
 	}
 	
 }
@@ -145,6 +147,7 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
 #scroll-text {	
 	font-weight: bold; 
 	font-size: 30px;
+	position: relative;
 	
   /* animation properties */
   -moz-transform: translateX(100%);
@@ -179,6 +182,45 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
     -webkit-transform: translateX(-50%);
     transform: translateX(-50%);
   }
+}
+
+/* for Firefox */
+@-moz-keyframes my-animation-l2r {
+  from { -moz-transform: translateX(-100%); }
+  to { -moz-transform: translateX(100%); }
+}
+
+/* for Chrome */
+@-webkit-keyframes my-animation-l2r {
+  from { -webkit-transform: translateX(-100%); }
+  to { -webkit-transform: translateX(100%); }
+}
+
+@keyframes my-animation-l2r {
+  from {
+    -moz-transform: translateX(-100%);
+    -webkit-transform: translateX(-100%);
+    transform: translateX(-100%);
+  }
+  to {
+    -moz-transform: translateX(100%);
+    -webkit-transform: translateX(100%);
+    transform: translateX(100%);
+  }
+}
+
+#scroll-container.vertical {
+	height: 200px;
+}
+
+@keyframes my-animation-b2t {
+  from { top: 100%; }
+  to { top: -100%; }
+}
+
+@keyframes my-animation-t2b {
+  from { top: -100%; }
+  to { top: 100%; }
 }
 
 #scroll-text.center {
@@ -289,6 +331,10 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
 <p><b>If you set the scroll speed to 0, then the message will display on the center of the matrix <br/>
 for the number of seconds set in the Duration (or Forever)</b></p> 
 		<p>Scroll Speed: <? PrintSettingSelect("SCROLL_SPEED", "SCROLL_SPEED", 0, 0, $defaultValue="20", getScrollSpeed(), $pluginName, $callbackName = "ShowDuration", $changedFunction = ""); ?></p>
+		<div id="scrollOptions" style= "<? echo $showScrollOptionsDiv; ?>">
+			<p>Scroll Direction: <? PrintSettingSelect("SCROLL_DIRECTION", "SCROLL_DIRECTION", 0, 0, $defaultValue="horizontal", getScrollDirection(), $pluginName, $callbackName = "updateScroll", $changedFunction = ""); ?></p>
+			<p>Invert Scroll: <?PrintSettingCheckbox("SCROLL_INVERT", "SCROLL_INVERT", 0, 0, "ON", "OFF", $pluginName ,$callbackName = "updateScroll", $changedFunction = ""); ?></p>
+		</div>
 		<div id="showDuration" style= "<? echo $showScrollDiv; ?>">
 			<p>Duration: <? PrintSettingSelect("DURATION", "DURATION", 0, 0, $defaultValue="10", getDuration(), $pluginName, $callbackName = "", $changedFunction = ""); ?></p>
 		</div>
@@ -314,6 +360,8 @@ for the number of seconds set in the Duration (or Forever)</b></p>
 </div>
 
 <script>
+var previewAnimation = null;
+var previewSignature = '';
 ShowColorPicker();
 ShowDuration();
 setInterval(updateOutputText, 1000);
@@ -394,12 +442,117 @@ function updateOutputText(){
 		textEl.style.color = currentColor;
 	var speed = parseInt(document.getElementById('SCROLL_SPEED').value);
 	if (speed > 0) {
-		var textWidth = textEl.scrollWidth;
-		var duration = (1.5 * textWidth) / speed;
+		var direction = document.getElementById('SCROLL_DIRECTION').value;
+		var invert = document.getElementById('SCROLL_INVERT').checked;
+		updateScrollDirection(direction, invert);
+	} else {
+		clearScrollDirection();
+	}
+}
+
+function updateScrollDirection(direction, invert){
+	var textEl = document.getElementById("scroll-text");
+	var containerEl = document.getElementById("scroll-container");
+	var isVertical = (direction == 'vertical');
+	containerEl.classList.toggle('vertical', isVertical);
+	textEl.style.textAlign = isVertical ? 'center' : '';
+
+	var speed = parseInt(document.getElementById('SCROLL_SPEED').value);
+	if (speed <= 0) {
+		return;
+	}
+
+	var cw = containerEl.clientWidth;
+	var ch = containerEl.clientHeight;
+	var range = document.createRange();
+	range.selectNodeContents(textEl);
+	var rect = range.getBoundingClientRect();
+	var tw = rect.width || textEl.scrollWidth;
+	var th = rect.height || textEl.scrollHeight;
+
+	var fromVal;
+	var toVal;
+	var base;
+	if (isVertical) {
+		base = ch;
+		if (invert) {
+			fromVal = -th;
+			toVal = ch;
+		} else {
+			fromVal = ch;
+			toVal = -th;
+		}
+	} else {
+		base = cw;
+		if (invert) {
+			fromVal = -tw;
+			toVal = cw;
+		} else {
+			fromVal = cw;
+			toVal = -tw;
+		}
+	}
+	var duration = Math.max(1, (1.5 * base) / speed);
+
+	if (textEl.animate) {
+		var signature = (isVertical ? 'v' : 'h') + (invert ? '1' : '0') + ':' + Math.round(duration * 10) + ':' + textEl.innerHTML.length;
+		if (previewAnimation && previewSignature === signature) {
+			return;
+		}
+		if (previewAnimation) {
+			previewAnimation.cancel();
+		}
+		textEl.style.animation = 'none';
+		var translate = isVertical ? 'translateY' : 'translateX';
+		previewAnimation = textEl.animate([
+			{ transform: translate + '(' + fromVal + 'px)' },
+			{ transform: translate + '(' + toVal + 'px)' }
+		], { duration: duration * 1000, iterations: Infinity, easing: 'linear' });
+		previewSignature = signature;
+	} else {
+		textEl.style.animation = '';
+		if (isVertical) {
+			textEl.style.transform = 'none';
+			textEl.style.webkitTransform = 'none';
+			textEl.style.mozTransform = 'none';
+		} else {
+			textEl.style.transform = '';
+			textEl.style.webkitTransform = '';
+			textEl.style.mozTransform = '';
+		}
+		textEl.style.animationName = isVertical ? (invert ? 'my-animation-t2b' : 'my-animation-b2t') : (invert ? 'my-animation-l2r' : 'my-animation');
+		textEl.style.webkitAnimationName = textEl.style.animationName;
+		textEl.style.mozAnimationName = textEl.style.animationName;
 		textEl.style.animationDuration = duration + 's';
 		textEl.style.webkitAnimationDuration = duration + 's';
 		textEl.style.mozAnimationDuration = duration + 's';
 	}
+}
+
+function clearScrollDirection(){
+	var textEl = document.getElementById("scroll-text");
+	var containerEl = document.getElementById("scroll-container");
+	if (previewAnimation) {
+		previewAnimation.cancel();
+		previewAnimation = null;
+	}
+	previewSignature = '';
+	containerEl.classList.remove('vertical');
+	textEl.style.animation = '';
+	textEl.style.textAlign = '';
+	textEl.style.animationName = '';
+	textEl.style.webkitAnimationName = '';
+	textEl.style.mozAnimationName = '';
+	textEl.style.animationDuration = '';
+	textEl.style.webkitAnimationDuration = '';
+	textEl.style.mozAnimationDuration = '';
+	textEl.style.transform = '';
+	textEl.style.webkitTransform = '';
+	textEl.style.mozTransform = '';
+}
+
+function updateScroll(setting){
+	updateOutputText();
 }
 
 function updateFont(){
@@ -540,11 +693,18 @@ function ShowDuration(){
 		document.getElementById('showDuration').style.display = "block";
 		document.getElementById('showSeconds').style.display = "block";
 		document.getElementById('scroll-text').classList.add('center');
+		document.getElementById('scrollOptions').style.display = "none";
+		document.getElementById('SCROLL_DIRECTION').value = "horizontal";
+		document.getElementById('SCROLL_INVERT').checked = false;
+		SetPluginSetting('<?php echo $pluginName; ?>', 'SCROLL_DIRECTION', 'horizontal', 0, 0, null);
+		SetPluginSetting('<?php echo $pluginName; ?>', 'SCROLL_INVERT', 'OFF', 0, 0, false);
+		updateOutputText();
 	}else{
 		document.getElementById('showDuration').style.display = "none";
 		document.getElementById('showSeconds').style.display = "none";
 		document.getElementById('INCLUDE_SECONDS').checked = false;
 		document.getElementById('scroll-text').classList.remove('center');
+		document.getElementById('scrollOptions').style.display = "block";
 		updateOutputText();
 	}
 }

@@ -109,6 +109,9 @@ function getScrollSpeed(){
         }
 	return $scrollSpeed;
 }
+function getScrollDirection(){
+	return array("Horizontal" => "horizontal", "Vertical" => "vertical");
+}
 function getDuration(){
 	$MAX_DURATION = 300;
 
