@@ -38,6 +38,25 @@ if (isset($pluginSettings['COUNT_UP'])){
 
 $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
 
+$overlayModelData = array();
+$modelsList = GetModels("");
+if (is_array($modelsList)) {
+	foreach ($modelsList as $m) {
+		$name = "";
+		$wd = 0;
+		$ht = 0;
+		if (is_array($m)) {
+			if (isset($m["Name"])) $name = trim($m["Name"]);
+			if (isset($m["Width"])) $wd = intval($m["Width"]);
+			elseif (isset($m["width"])) $wd = intval($m["width"]);
+			if (isset($m["Height"])) $ht = intval($m["Height"]);
+			elseif (isset($m["height"])) $ht = intval($m["height"]);
+		}
+		if ($name != "" && $wd > 0 && $ht > 0) {
+			$overlayModelData[$name] = array("w" => $wd, "h" => $ht);
+		}
+	}
+}
 
 ?>
 
@@ -144,19 +163,14 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
   	overflow: hidden;
 }
 
-#scroll-text {	
+#scroll-text {
 	font-weight: bold; 
 	font-size: 30px;
 	position: relative;
-	
-  /* animation properties */
-  -moz-transform: translateX(100%);
-  -webkit-transform: translateX(100%);
-  transform: translateX(100%);
-  
-  -moz-animation: my-animation 7s linear infinite;
-  -webkit-animation: my-animation 7s linear infinite;
-  animation: my-animation 7s linear infinite;
+	transform: none;
+	-moz-transform: none;
+	-webkit-transform: none;
+	text-align: center;
 }
 
 /* for Firefox */
@@ -209,10 +223,6 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
   }
 }
 
-#scroll-container.vertical {
-	height: 200px;
-}
-
 @keyframes my-animation-b2t {
   from { top: 100%; }
   to { top: -100%; }
@@ -233,6 +243,39 @@ $gitURL = "https://github.com/FalconChristmas/FPP-Simple-Countdown.git";
   text-align: center;
 }
 
+.modal-header .close {
+	background: none;
+	border: 0;
+	cursor: pointer;
+	float: right;
+	font-size: 21px;
+	font-weight: 700;
+	line-height: 1;
+	opacity: 0.5;
+}
+
+#previewMatrixContainer {
+	display: flex;
+	justify-content: center;
+	max-width: 100%;
+	overflow: hidden;
+}
+
+#previewMatrixCanvas {
+	background: #000;
+	display: block;
+}
+
+#previewMatrixInfo {
+	font-size: 13px;
+	margin-bottom: 8px;
+}
+
+#previewMessageText {
+	font-size: 13px;
+	margin-top: 8px;
+	word-break: break-all;
+}
 </style>
 </head>
 
@@ -341,6 +384,8 @@ for the number of seconds set in the Duration (or Forever)</b></p>
 		
 		<p>Matrix Name: <? PrintSettingSelect("OVERLAY_MODEL", "OVERLAY_MODEL", 0, 0, $defaultValue="", $values = GetOverlayList(), $pluginName, $callbackName = "", $changedFunction = ""); ?>
 		<span id="OVERLAY_MODEL_tip" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="auto" data-bs-title="If this is blank, then you need to configure the correct Pixel Overlay Model"><img id="OVERLAY_MODEL_img" src="images/redesign/help-icon.svg" class="icon-help" alt="OVERLAY_MODEL help icon"></span></p>
+		<p><button type="button" id="previewMatrixBtn" class="btn btn-primary btn-xs">Preview Matrix</button>
+		<span id="PREVIEW_MATRIX_tip" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="auto" data-bs-title="Opens a popup showing exactly how the countdown will look on your configured Matrix"><img id="PREVIEW_MATRIX_img" src="images/redesign/help-icon.svg" class="icon-help" alt="Preview Matrix help icon"></span></p>
 		<p>Overlay Mode: <? PrintSettingSelect("OVERLAY_MODE", "OVERLAY_MODE", 0, 0, "", Array("Full Overlay" => "1", "Transparent" => "2", "Transparent RGB" => "3"), $pluginName, $callbackName = "", $changedFunction = ""); ?> </p>
 		<p><h3>The Overlay mode determines how you want your message to display.</h3>
 		<ul>
@@ -359,11 +404,36 @@ for the number of seconds set in the Duration (or Forever)</b></p>
 	</div>
 </div>
 
+<div class="modal fade" id="previewMatrixModal" tabindex="-1" role="dialog" aria-labelledby="previewMatrixModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="previewMatrixModalLabel">Matrix Preview</h4>
+				<button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+			</div>
+			<div class="modal-body">
+				<div id="previewMatrixInfo"></div>
+				<div id="previewMatrixContainer">
+					<canvas id="previewMatrixCanvas"></canvas>
+				</div>
+				<div id="previewMessageText"></div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal" data-bs-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+var overlayModelData = <?php echo json_encode($overlayModelData); ?>;
+</script>
+
 <script>
 var previewAnimation = null;
 var previewSignature = '';
 ShowColorPicker();
-ShowDuration();
+ShowDuration(true);
 setInterval(updateOutputText, 1000);
 document.getElementById('SCROLL_SPEED').addEventListener('change', function() {
 	ShowDuration();
@@ -409,6 +479,9 @@ function setColor(color, updateColpicker = true) {
 		color: '#ff0000',
 		submit: false,
 		onChange: function(hsb,hex,rgb,el,bySetColor) {
+            if (bySetColor)
+                return;
+
             if (colpickTimer != null)
                 clearTimeout(colpickTimer);
 
@@ -434,20 +507,14 @@ function updateOutputTextSeconds(updateOutput){
 function updateOutputText(){
 	var messageText= getMessageText();
 	var textEl = document.getElementById("scroll-text");
+	var containerEl = document.getElementById("scroll-container");
 	textEl.innerHTML = messageText;
-	var fontSize = parseInt(document.getElementById("FONT_SIZE").value);
-	if (fontSize > 0)
-		textEl.style.fontSize = fontSize + 'px';
 	if (typeof(currentColor) != 'undefined' && currentColor != '')
 		textEl.style.color = currentColor;
-	var speed = parseInt(document.getElementById('SCROLL_SPEED').value);
-	if (speed > 0) {
-		var direction = document.getElementById('SCROLL_DIRECTION').value;
-		var invert = document.getElementById('SCROLL_INVERT').checked;
-		updateScrollDirection(direction, invert);
-	} else {
-		clearScrollDirection();
-	}
+	clearScrollDirection();
+	textEl.classList.add('center');
+	containerEl.classList.remove('vertical');
+	textEl.style.textAlign = 'center';
 }
 
 function updateScrollDirection(direction, invert){
@@ -684,10 +751,10 @@ function getMessageText(){
 	}           
     
 	messageText += messagePostText + " " + eventName;
-	return messageText;
+	return messageText.replace(/^\s+/, '');
 }
 
-function ShowDuration(){
+function ShowDuration(skipSave){
 	var scrollSpeed = document.getElementById('SCROLL_SPEED').value;
 	if (scrollSpeed ==0){
 		document.getElementById('showDuration').style.display = "block";
@@ -696,8 +763,10 @@ function ShowDuration(){
 		document.getElementById('scrollOptions').style.display = "none";
 		document.getElementById('SCROLL_DIRECTION').value = "horizontal";
 		document.getElementById('SCROLL_INVERT').checked = false;
-		SetPluginSetting('<?php echo $pluginName; ?>', 'SCROLL_DIRECTION', 'horizontal', 0, 0, null);
-		SetPluginSetting('<?php echo $pluginName; ?>', 'SCROLL_INVERT', 'OFF', 0, 0, false);
+		if (!skipSave){
+			SetPluginSetting('<?php echo $pluginName; ?>', 'SCROLL_DIRECTION', 'horizontal', 0, 0, null);
+			SetPluginSetting('<?php echo $pluginName; ?>', 'SCROLL_INVERT', 'OFF', 0, 0, false);
+		}
 		updateOutputText();
 	}else{
 		document.getElementById('showDuration').style.display = "none";
@@ -719,6 +788,186 @@ function ShowCountUp(){
 		document.getElementById('showCompleted').style.display = "block";
 		updateOutputText();
 	}	
+}
+
+var previewModelData = null;
+var previewAnimFrame = null;
+
+document.getElementById('previewMatrixBtn').addEventListener('click', function() { openMatrixPreview(); });
+
+function openMatrixPreview(){
+	var model = document.getElementById('OVERLAY_MODEL').value;
+	var modelData = overlayModelData[model];
+	if (!model || !modelData){
+		DialogError('Preview Matrix', 'No Pixel Overlay Model selected or the model dimensions are not available. Please select a valid Matrix in the Matrix Name setting.');
+		return;
+	}
+	var canvas = document.getElementById('previewMatrixCanvas');
+	canvas.width = modelData.w;
+	canvas.height = modelData.h;
+	previewModelData = modelData;
+
+	var container = document.getElementById('previewMatrixContainer');
+	var availW = container.clientWidth;
+	if (!availW || availW < 40) availW = 860;
+	var cellSize = 4;
+	var dispW = modelData.w * cellSize;
+	var dispH = modelData.h * cellSize;
+	var maxH = 460;
+	var s = Math.min(1, (availW - 2) / dispW, maxH / dispH);
+	s = Math.max(s, 0.05);
+	canvas.style.width = Math.max(1, Math.round(dispW * s)) + 'px';
+	canvas.style.height = Math.max(1, Math.round(dispH * s)) + 'px';
+
+	updatePreviewInfo(model);
+
+	loadPreviewFont(document.getElementById('FONT').value);
+
+	if (previewAnimFrame)
+		cancelAnimationFrame(previewAnimFrame);
+	renderPreviewFrame();
+	previewAnimFrame = requestAnimationFrame(previewRenderLoop);
+
+	showPreviewModal();
+}
+
+var previewFontUrl = '/plugin.php?plugin=<?php echo $pluginName; ?>&page=font.php&nopage=1&name=';
+var previewFontsLoaded = {};
+
+function getPreviewFontFamily(fontName){
+	return 'FPP-Preview-' + fontName.replace(/[^a-zA-Z0-9]+/g, '-');
+}
+
+function loadPreviewFont(fontName){
+	var family = getPreviewFontFamily(fontName);
+	if (previewFontsLoaded.hasOwnProperty(family) || !window.FontFace || !fontName)
+		return;
+	previewFontsLoaded[family] = false;
+	fetch(previewFontUrl + encodeURIComponent(fontName))
+		.then(function(resp){
+			if (!resp.ok)
+				throw new Error('font not found');
+			return resp.blob();
+		})
+		.then(function(blob){
+			return new Promise(function(resolve, reject){
+				var textFile = new FileReader();
+				textFile.onload = function(){ resolve(textFile.result); };
+				textFile.onerror = reject;
+				textFile.readAsArrayBuffer(blob);
+			});
+		})
+		.then(function(buffer){
+			var font = new FontFace(family, buffer);
+			return font.load();
+		})
+		.then(function(font){
+			document.fonts.add(font);
+			previewFontsLoaded[family] = true;
+		})
+		.catch(function(){
+			previewFontsLoaded[family] = false;
+		});
+}
+
+function previewRenderLoop(){
+	renderPreviewFrame();
+	previewAnimFrame = requestAnimationFrame(previewRenderLoop);
+}
+
+function renderPreviewFrame(){
+	if (!previewModelData)
+		return;
+	var canvas = document.getElementById('previewMatrixCanvas');
+	var ctx = canvas.getContext('2d');
+	var w = canvas.width, h = canvas.height;
+	var msg = getMessageText();
+	var fontSize = parseInt(document.getElementById('FONT_SIZE').value);
+	if (!fontSize || fontSize < 1) fontSize = 1;
+	var fontName = document.getElementById('FONT').value || 'Sans';
+	var color = (typeof currentColor != 'undefined' && currentColor) ? currentColor : '#ffffff';
+	var speed = parseInt(document.getElementById('SCROLL_SPEED').value);
+	if (!speed || speed < 0) speed = 0;
+	var direction = document.getElementById('SCROLL_DIRECTION').value;
+	var invert = document.getElementById('SCROLL_INVERT').checked;
+
+	ctx.clearRect(0, 0, w, h);
+	ctx.fillStyle = '#000000';
+	ctx.fillRect(0, 0, w, h);
+	ctx.fillStyle = color;
+	var fontCss = fontName;
+	if (fontName != 'Sans' && previewFontsLoaded[getPreviewFontFamily(fontName)] === true)
+		fontCss = getPreviewFontFamily(fontName);
+	ctx.font = fontSize + 'px "' + fontCss + '", sans-serif';
+	ctx.textBaseline = 'middle';
+	ctx.textAlign = 'center';
+
+	var tw = ctx.measureText(msg).width;
+	var th = fontSize;
+	var x, y;
+
+	if (speed > 0){
+		var horizontal = (direction != 'vertical');
+		var travel = (horizontal ? tw + w : th + h);
+		var t = (Date.now() * speed / 1000) % travel;
+		if (horizontal){
+			x = (invert ? -tw/2 + t : w + tw/2 - t);
+			y = h/2;
+		}else{
+			x = w/2;
+			y = (invert ? -th/2 + t : h + th/2 - t);
+		}
+	}else{
+		x = w/2;
+		y = h/2;
+	}
+	ctx.fillText(msg, x, y);
+
+	var info = document.getElementById('previewMessageText');
+	if (info.innerHTML != ('Message: "' + msg + '"')){
+		info.innerHTML = 'Message: "' + msg + '"';
+	}
+}
+
+function updatePreviewInfo(model){
+	var fontName = document.getElementById('FONT').value || 'Sans';
+	var fontSize = parseInt(document.getElementById('FONT_SIZE').value) || 20;
+	var color = (typeof currentColor != 'undefined' && currentColor) ? currentColor : '#ffffff';
+	var speed = parseInt(document.getElementById('SCROLL_SPEED').value) || 0;
+	var direction = document.getElementById('SCROLL_DIRECTION').value;
+	var invert = document.getElementById('SCROLL_INVERT').checked;
+	var modeSel = document.getElementById('OVERLAY_MODE');
+	var mode = (modeSel.selectedOptions.length ? modeSel.selectedOptions[0].text : 'Full Overlay');
+	var scroll = 'Centered, Duration ' + (document.getElementById('DURATION').value || '10') + 's';
+	if (speed > 0)
+		scroll = speed + ' px/s ' + direction + (invert ? ' (inverted)' : '');
+	var el = document.getElementById('previewMatrixInfo');
+	el.innerHTML = '<b>Matrix:</b> ' + model + ' (' + previewModelData.w + 'w x ' + previewModelData.h + 'h)' +
+		' &nbsp;|&nbsp; <b>Font:</b> ' + fontName +
+		' <b>Size:</b> ' + fontSize +
+		' <b>Color:</b> ' + color +
+		' &nbsp;|&nbsp; <b>Mode:</b> ' + mode +
+		'<br/><b>Scroll:</b> ' + scroll;
+}
+
+function showPreviewModal(){
+	var modalEl = document.getElementById('previewMatrixModal');
+	if (window.bootstrap && bootstrap.Modal){
+		bootstrap.Modal.getOrCreateInstance(modalEl).show();
+	}else if (window.jQuery && jQuery.fn.modal){
+		jQuery(modalEl).modal('show');
+	}else if (window.jQuery){
+		jQuery(modalEl).show();
+	}
+}
+
+if (window.jQuery){
+	jQuery('#previewMatrixModal').on('hidden.bs.modal', function(){
+		if (previewAnimFrame){
+			cancelAnimationFrame(previewAnimFrame);
+			previewAnimFrame = null;
+		}
+	});
 }
 
 </script>
