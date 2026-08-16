@@ -340,6 +340,7 @@ do {
 		}
 
 	$messageText = preg_replace('!\s+!', ' ', $messageText);
+	$messageText = ltrim($messageText);
 
 	logEntry("messageText= ".$messageText);
 	logEntry("ScrollText options-hostLocation=  ".$hostLocation. " overlayModel= ".$overlayModel. " Position= " .$Position. " Font = " .$font. " fontsize= " .$fontSize. " fontColor= " .$color. " scrollSpeed= " .$scrollSpeed. " Auto= " .$auto." duration= " .$duration);
