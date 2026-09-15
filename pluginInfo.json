@@ -27,5 +27,22 @@
             "branch": "main",
             "sha": ""
         }
-    ]
+    ],
+    "privacy": {
+        "summary": "Sends your countdown text and display settings to the FPP player address you enter (this device by default). Nothing goes online and nothing is kept about anyone.",
+        "sends": [
+            {
+                "to": "http://the FPP player address you enter (Host Location)",
+                "what": "the countdown message text and the overlay model, font and colour to show it with",
+                "why": "to display the countdown on that player's pixel overlay model",
+                "alwaysOn": false
+            }
+        ],
+        "collects": [],
+        "sensors": [],
+        "remoteAccess": "none",
+        "systemChanges": [],
+        "closedCode": false,
+        "other": "Each run of the 'Simple Countdown-Run' command writes the countdown text and its settings to the plugin log (logs/plugin-FPP-Simple-Countdown.log). Settings are kept after uninstall."
+    }
 }
